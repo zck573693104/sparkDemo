@@ -26,18 +26,16 @@ public class KafkaReader {
     static final Pattern SPACE = Pattern.compile(" ");
 
     public static void main(String[] args) {
-        // 每个话题的分片数
-        int numThreads = 2;
         SparkConf sparkConf = new SparkConf().setAppName("KafkaWordCount")
                 .setMaster("local[2]");
         JavaStreamingContext jssc = new JavaStreamingContext(sparkConf,
                 new Duration(50000));
 
         Map<String, Object> kafkaParams = new HashMap<String, Object>();
-        kafkaParams.put("bootstrap.servers", "localhost:9092");
+        kafkaParams.put("bootstrap.servers", "master:9092");
         kafkaParams.put("key.deserializer", StringDeserializer.class);
         kafkaParams.put("value.deserializer", StringDeserializer.class);
-        kafkaParams.put("group.id", "1");
+        kafkaParams.put("group.id", "test_group");
         kafkaParams.put("auto.offset.reset", "latest");
         kafkaParams.put("enable.auto.commit", false);
 

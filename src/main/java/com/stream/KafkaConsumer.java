@@ -20,10 +20,10 @@ public class KafkaConsumer {
     private KafkaConsumer() {
         Properties props = new Properties();
         // zookeeper 配置
-        props.put("zookeeper.connect", "127.0.0.1:2181");
+        props.put("zookeeper.connect", "master:2181");
 
         // group 代表一个消费组
-        props.put("group.id", "1");
+        props.put("group.id", "test_group");
 
         // zk连接超时
         props.put("zookeeper.session.timeout.ms", "4000");

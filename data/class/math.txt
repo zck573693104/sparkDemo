@@ -2,3 +2,6 @@
 李四 99
 王五 66
 赵六 77
+git rm -r --cached .
+git add .
+git commit -m 'update .gitignore'
