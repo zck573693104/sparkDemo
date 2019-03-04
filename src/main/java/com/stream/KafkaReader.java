@@ -29,7 +29,7 @@ public class KafkaReader {
         SparkConf sparkConf = new SparkConf().setAppName("KafkaWordCount")
                 .setMaster("local[2]");
         JavaStreamingContext jssc = new JavaStreamingContext(sparkConf,
-                new Duration(50000));
+                new Duration(5000));
 
         Map<String, Object> kafkaParams = new HashMap<String, Object>();
         kafkaParams.put("bootstrap.servers", "master:9092");
@@ -49,6 +49,7 @@ public class KafkaReader {
 
         JavaDStream<String> words = stream
                 .flatMap(new FlatMapFunction<ConsumerRecord<String, String>, String>() {
+                    @Override
                     public Iterator<String> call(
                             ConsumerRecord<String, String> t) throws Exception {
                         System.out.println(">>>" + t.value());
@@ -60,10 +61,12 @@ public class KafkaReader {
         // 对其中的单词进行统计
         JavaPairDStream<String, Integer> wordCounts = words.mapToPair(
                 new PairFunction<String, String, Integer>() {
+                    @Override
                     public Tuple2<String, Integer> call(String s) {
                         return new Tuple2<String, Integer>(s, 1);
                     }
                 }).reduceByKey(new Function2<Integer, Integer, Integer>() {
+            @Override
             public Integer call(Integer i1, Integer i2) {
                 return i1 + i2;
             }
@@ -71,12 +74,10 @@ public class KafkaReader {
 
         // 打印结果
         wordCounts.print();
-
+        jssc.start();
         try {
-            jssc.start();
             jssc.awaitTermination();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
