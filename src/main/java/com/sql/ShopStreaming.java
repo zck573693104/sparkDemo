@@ -1,48 +1,35 @@
 package com.sql;
-
+import org.apache.spark.api.java.function.VoidFunction2;
+import org.apache.spark.streaming.kafka010.HasOffsetRanges;
+import org.apache.spark.streaming.kafka010.OffsetRange;
+import com.RedisUtil;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.VoidFunction2;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
-import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaInputDStream;
-import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka010.ConsumerStrategies;
-import org.apache.spark.streaming.kafka010.KafkaUtils;
-import org.apache.spark.streaming.kafka010.LocationStrategies;
-import scala.Tuple2;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.spark.streaming.api.java.*;
+import org.apache.spark.streaming.kafka010.*;
+import java.util.*;
 
 public class ShopStreaming {
-
+    private static final String TOPIC = "test";
+    public static Map<String, Object> kafkaParams = new HashMap<String, Object>();
+    public static RedisUtil redisUtil = new RedisUtil();
     public static void main(String[] args) throws InterruptedException {
-            Map<String, Object> kafkaParams = new HashMap<String, Object>();
         kafkaParams.put("bootstrap.servers", "master:9092");
         kafkaParams.put("key.deserializer", StringDeserializer.class);
         kafkaParams.put("value.deserializer", StringDeserializer.class);
         kafkaParams.put("group.id", "test_group");
         kafkaParams.put("auto.offset.reset", "latest");
         kafkaParams.put("enable.auto.commit", false);
-        Collection<String> topics = Arrays.asList("test");
-        //设置日志级别
-//        Logger.getLogger("org").setLevel(Level.ERROR);
+        Collection<String> topics = Arrays.asList(TOPIC);
 
-        //初始化spark上下文
         SparkConf conf;
         conf = new SparkConf()
                 .setMaster("local[2]")
@@ -50,22 +37,57 @@ public class ShopStreaming {
 
         //初始化spark上下文 以及时间间隔
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(10));
+        Map<TopicPartition, Long> var2 = new HashMap<>();
+        TopicPartition topicPartition = new TopicPartition("test", 0);
+        JavaInputDStream<ConsumerRecord<String, String>> shopStream = null;
+        var2.put(topicPartition, redisUtil.getHash(TOPIC, "0"));
+        if (redisUtil.getHash(TOPIC, "0") != 0) {
 
-        JavaInputDStream<ConsumerRecord<String, String>> shopStream = KafkaUtils.createDirectStream(jssc, LocationStrategies.PreferConsistent(),
-                        ConsumerStrategies.Subscribe(topics,
-                                kafkaParams));
-
-        JavaDStream<ShopRating> shopRatingDStream = shopStream.map(new Function<ConsumerRecord<String, String>, ShopRating>() {
+            shopStream = KafkaUtils.createDirectStream(jssc, LocationStrategies.PreferConsistent(),
+                    ConsumerStrategies.Subscribe(topics,
+                            kafkaParams, var2));
+        } else {
+            shopStream = KafkaUtils.createDirectStream(jssc, LocationStrategies.PreferConsistent(),
+                    ConsumerStrategies.Subscribe(topics,
+                            kafkaParams));
+        }
+        shopStream.transform(new Function2<JavaRDD<ConsumerRecord<String, String>>, Time, JavaRDD<Integer>>() {
             @Override
-            public ShopRating call(ConsumerRecord<String, String> record) throws Exception {
-                ShopRating shopRating = JSON.parseObject(record.value(),ShopRating.class);
-                return shopRating;
+            public JavaRDD<Integer> call(JavaRDD<ConsumerRecord<String, String>> rdd, Time time) throws Exception {
+                redisUtil = new RedisUtil();
+                OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                for (OffsetRange offsetRange:offsets){
+                    redisUtil.setHash(offsetRange.topic(),offsetRange.partition(),offsetRange.untilOffset());
+                }
+                JavaRDD<Integer> integerJavaRDD = rdd.map(new Function<ConsumerRecord<String, String>, Integer>() {
+
+                    @Override
+                    public Integer call(ConsumerRecord<String, String> record) throws Exception {
+                        ShopRating shopRating = JSON.parseObject(record.value(), ShopRating.class);
+                        return shopRating.getSkuId();
+                    }
+                });
+                return integerJavaRDD;
+            }
+        }).print();
+        JavaDStream<Integer> shopRatingDStream = shopStream.map(new Function<ConsumerRecord<String, String>, Integer>() {
+            @Override
+            public Integer call(ConsumerRecord<String, String> record) throws Exception {
+                ShopRating shopRating = JSON.parseObject(record.value(), ShopRating.class);
+                //System.out.println("测试"+shopRating.getSkuId());
+                return shopRating.getSkuId();
             }
         });
 
-        JavaDStream<ShopRating> dStream = shopRatingDStream.window(Durations.seconds(40),Durations.seconds(20));
-        dStream.print();
-        System.out.println("次数:"+dStream.count());
+        JavaDStream<Integer> dStream = shopRatingDStream.reduceByWindow(new Function2<Integer, Integer, Integer>() {
+            @Override
+            public Integer call(Integer integer, Integer integer2) throws Exception {
+                return integer + integer2;
+            }
+        }, Durations.seconds(40), Durations.seconds(20));
+
+
+
 //        shopRatingDStream.foreachRDD(new VoidFunction2<JavaRDD<ShopRating>, Time>() {
 //            @Override
 //            public void call(JavaRDD<ShopRating> shopRatingJavaRDD, Time time) throws Exception {
@@ -83,4 +105,6 @@ public class ShopStreaming {
 
 
     }
+
+
 }

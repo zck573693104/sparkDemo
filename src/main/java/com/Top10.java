@@ -4,6 +4,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.streaming.kafka010.HasOffsetRanges;
+import org.apache.spark.streaming.kafka010.OffsetRange;
 
 import java.util.List;
 
@@ -29,7 +31,6 @@ public class Top10 {
                 return integer;
             }
         },true,1);
-
         JavaRDD<Integer> sort = map.filter(new Function<Integer, Boolean>() {
             @Override
             public Boolean call(Integer integer) throws Exception {
