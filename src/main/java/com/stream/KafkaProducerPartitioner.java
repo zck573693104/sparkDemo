@@ -16,7 +16,7 @@ public class KafkaProducerPartitioner implements Partitioner {
         // 得到 topic 的 partitions 信息
         List<PartitionInfo> partitions = cluster.partitionsForTopic(topic);
         int numPartitions = partitions.size();
-        return key.toString().hashCode() % numPartitions;
+        return value.toString().hashCode() % numPartitions;
     }
 
     @Override

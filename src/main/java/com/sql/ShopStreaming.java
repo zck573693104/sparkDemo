@@ -1,4 +1,5 @@
 package com.sql;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.streaming.kafka010.HasOffsetRanges;
 import org.apache.spark.streaming.kafka010.OffsetRange;
@@ -19,6 +20,7 @@ import java.util.*;
 
 public class ShopStreaming {
     private static final String TOPIC = "test";
+    private static final String GROUP = "test_group";
     public static Map<String, Object> kafkaParams = new HashMap<String, Object>();
     public static RedisUtil redisUtil = new RedisUtil();
     public static void main(String[] args) throws InterruptedException {
@@ -38,19 +40,20 @@ public class ShopStreaming {
         //初始化spark上下文 以及时间间隔
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(10));
         Map<TopicPartition, Long> var2 = new HashMap<>();
-        TopicPartition topicPartition = new TopicPartition("test", 0);
         JavaInputDStream<ConsumerRecord<String, String>> shopStream = null;
-        var2.put(topicPartition, redisUtil.getHash(TOPIC, "0"));
-        if (redisUtil.getHash(TOPIC, "0") != 0) {
-
+        for (Map.Entry<String,String> entry:redisUtil.getAll(GROUP).entrySet()){
+            TopicPartition topicPartition = new TopicPartition(entry.getKey(), Integer.valueOf(entry.getValue()));
+            var2.put(topicPartition, redisUtil.getHash(entry.getKey(), entry.getValue()));
             shopStream = KafkaUtils.createDirectStream(jssc, LocationStrategies.PreferConsistent(),
                     ConsumerStrategies.Subscribe(topics,
                             kafkaParams, var2));
-        } else {
+        }
+        if (var2.isEmpty()){
             shopStream = KafkaUtils.createDirectStream(jssc, LocationStrategies.PreferConsistent(),
                     ConsumerStrategies.Subscribe(topics,
                             kafkaParams));
         }
+
         shopStream.transform(new Function2<JavaRDD<ConsumerRecord<String, String>>, Time, JavaRDD<Integer>>() {
             @Override
             public JavaRDD<Integer> call(JavaRDD<ConsumerRecord<String, String>> rdd, Time time) throws Exception {

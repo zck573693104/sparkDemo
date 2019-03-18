@@ -1,10 +1,7 @@
 package com;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -74,5 +71,9 @@ public class RedisUtil implements Serializable {
         }
         return 0L;
 
+    }
+
+    public Map<String,String> getAll(String key){
+       return jedis.hgetAll(key);
     }
 }
