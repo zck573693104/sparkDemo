@@ -32,8 +32,8 @@ public class WordCountLocal implements Serializable {
 
 
         JavaSparkContext sc = new JavaSparkContext(conf);
-        sc.setCheckpointDir("hdfs://localhost:9000/checkPoint");
-        JavaRDD<String> lines = sc.textFile("hdfs://localhost:9000/test/SogouT-Rank.mini");
+        //sc.setCheckpointDir("hdfs://localhost:9000/checkPoint");
+        JavaRDD<String> lines = sc.textFile("D://Program Files//mongo//bin//tweets.bat");
 
 //        Iterator<Tuple2<String, Integer>> timeIte = lines.flatMap(new FlatMapFunction<String, String>() {
 //            @Override
@@ -95,8 +95,8 @@ public class WordCountLocal implements Serializable {
                     }
 
                 });
-        wordCounts.saveAsTextFile("hdfs://localhost:9000/scresult");
-        wordCounts.checkpoint();
+       // wordCounts.saveAsTextFile("hdfs://localhost:9000/scresult");
+        //wordCounts.checkpoint();
         Iterator<Tuple2<String, Integer>> iterator = wordCounts
                 //交换key-value，注意类型
                 .mapToPair(s -> new Tuple2<Integer, String>(s._2, s._1))

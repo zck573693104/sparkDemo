@@ -41,6 +41,7 @@ public class HdfsUtil {
     private static Configuration getConfiguration() {
         Configuration configuration = new Configuration();
         configuration.set("fs.defaultFS", hdfsPath);
+        configuration.set("dfs.client.use.datanode.hostname", "true");
         return configuration;
     }
 
