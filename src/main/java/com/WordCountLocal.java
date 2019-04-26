@@ -33,7 +33,7 @@ public class WordCountLocal implements Serializable {
 
         JavaSparkContext sc = new JavaSparkContext(conf);
         //sc.setCheckpointDir("hdfs://localhost:9000/checkPoint");
-        JavaRDD<String> lines = sc.textFile("D://Program Files//mongo//bin//tweets.bat");
+        JavaRDD<String> lines = sc.textFile("hdfs://localhost:8020/user/hdfs/test/test.txt");
 
 //        Iterator<Tuple2<String, Integer>> timeIte = lines.flatMap(new FlatMapFunction<String, String>() {
 //            @Override

@@ -18,4 +18,8 @@
         <name>dfs.namenode.secondary.http-address</name>
         <value>worker1:50090</value>
     </property>
+     <property>
+        <name>dfs.client.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
 </configuration>
