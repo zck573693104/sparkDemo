@@ -8,6 +8,7 @@ import java.util.Properties;
 
 public class HiveSpark {
     public static void main (String [] args){
+    	System.setProperty("HADOOP_USER_NAME", "root");
         SparkSession spark = SparkSession.builder().master("local[2]")
 				.appName("SparkHive")
 				.config("spark.sql.warehouse.dir", "/user/hive/warehouse/").enableHiveSupport()
@@ -15,7 +16,8 @@ public class HiveSpark {
 
 
         spark.sql("use zck_test");
-        spark.sql("show tables").show();;
+        spark.sql("show tables").show();
+        spark.sql("insert into test values (2,'is me')");
        Dataset<Row> dataset = spark.sql("select * from test");
        dataset.show();
        //数据库内容
