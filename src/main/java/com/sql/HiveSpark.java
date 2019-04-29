@@ -19,7 +19,10 @@ public class HiveSpark {
                 .getOrCreate();
 
         spark.sql("show databases").show();
+
         spark.sql("use zck_test");
+        spark.sql("CREATE TABLE IF NOT EXISTS src (key INT, value STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' ");
+        spark.sql("create table if not exists t3(name string)");
         spark.sql("show tables").show();
         spark.sql("insert into t2 values (3,'isme')");
         Dataset<Row> dataset = spark.sql("select * from t2");
