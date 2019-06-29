@@ -4,7 +4,7 @@
 <configuration>
   <property>
     <name>hive.metastore.uris</name>
-    <value>thrift://winmaster:9083</value>
+    <value>thrift://master:9083</value>
   </property>
   <property>
     <name>hive.metastore.client.socket.timeout</name>
@@ -184,7 +184,7 @@
   </property>
   <property>
     <name>hive.zookeeper.quorum</name>
-    <value>winmaster</value>
+    <value>master</value>
   </property>
   <property>
     <name>hive.zookeeper.client.port</name>
@@ -196,7 +196,7 @@
   </property>
   <property>
     <name>hbase.zookeeper.quorum</name>
-    <value>winmaster</value>
+    <value>master</value>
   </property>
   <property>
     <name>hbase.zookeeper.property.clientPort</name>

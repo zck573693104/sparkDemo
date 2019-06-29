@@ -10,5 +10,5 @@ server:
 
 
 hdfs:
-  path: hdfs://localhost:8020
+  path: hdfs://master:8020
   username: hdfs
